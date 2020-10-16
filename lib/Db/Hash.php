@@ -10,6 +10,7 @@ class Hash extends Entity {
 
     protected $fileid;
     protected $revision;
+    protected $type;
     protected $hash;
 
     public function __constrct() {

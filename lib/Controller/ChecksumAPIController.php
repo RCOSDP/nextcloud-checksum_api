@@ -24,7 +24,7 @@ class ChecksumAPIController extends OCSController {
     private $userSession;
     private $mapper;
     private $logger;
-    private $hashType = 'sha512';
+    private $hashTypes = ['md5', 'sha256', 'sha512'];
     private $versionAppId = 'files_versions';
 
     public function __construct($appName,
@@ -40,6 +40,16 @@ class ChecksumAPIController extends OCSController {
         $this->logger = $logger;
     }
 
+    private function isValidHash(string $hash) {
+        foreach($this->hashTypes as $hashType) {
+            if ($hashType === $hash) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private function getMatchedVersion(string $path, string $revision) {
         $user = $this->userSession->getUser();
         $versions = \OCA\Files_Versions\Storage::getVersions($user->getUID(), $path);
@@ -52,10 +62,11 @@ class ChecksumAPIController extends OCSController {
         return null;
     }
 
-    private function saveRecord(int $fileid, int $revision, string $hash) {
+    private function saveRecord(int $fileid, int $revision, string $hashType, string $hash) {
         $entity = new Hash();
         $entity->setFileid($fileid);
         $entity->setRevision($revision);
+        $entity->setType($hashType);
         $entity->setHash($hash);
         $this->mapper->insert($entity);
         $this->logger->info(sprintf('save a record(fileid: %d, revision: %d) to database', $fileid, $revision));
@@ -66,12 +77,32 @@ class ChecksumAPIController extends OCSController {
     /**
      * get hash value from database or original file
      * @NoAdminRequired
+     $ @param (string) $hash - hash types to calculate 
      * @param (string) $path - path to file
      * @param (string) $revision - revision of file
      */
-    public function checksum($path, $revision) {
+    public function checksum($hash, $path, $revision) {
         $this->logger->info('path argument: ' . $path);
         $this->logger->info('revision argument: ' . $revision);
+
+        if (is_null($hash)) {
+            $this->logger->error('query parameter hash is missing.');
+            return new DataResponse(
+                'query parameter hash is missing',
+                Http::STATUS_BAD_REQUEST
+            );
+        }
+
+        $hashTypes = explode(',', $hash);
+        foreach($hashTypes as $hashType) {
+            if (!$this->isValidHash($hashType)) {
+                $this->logger->error('query parameter hash is invalid.');
+                return new DataResponse(
+                    'query parameter hash is invalid',
+                    Http::STATUS_BAD_REQUEST
+                );
+            }
+        }
 
         if (is_null($path)) {
             $this->logger->error('query parameter path is missing.');
@@ -131,24 +162,32 @@ class ChecksumAPIController extends OCSController {
             }
         }
 
-        $entity = $this->mapper->find($fileid, $targetRevision);
-        if (is_null($entity)) {
-            if ($targetRevision === $latestRevision) {
-                $storage = $userFolder->getStorage();
-                $info = $storage->getLocalFile($node->getInternalPath());
-            } else {
-                $user = $this->userSession->getUser();
-                $targetFile = $user->getUID() . '/files_versions' . $version['path'] . '.v' . $version['version'];
-                $view = new \OC\Files\View('/');
-                $info = $view->getLocalFile($targetFile);
+        $entities = [];
+        foreach ($hashTypes as $hashType) {
+            $entity = $this->mapper->find($fileid, $targetRevision, $hashType);
+            if (is_null($entity)) {
+                if ($targetRevision === $latestRevision) {
+                    $storage = $userFolder->getStorage();
+                    $info = $storage->getLocalFile($node->getInternalPath());
+                } else {
+                    $user = $this->userSession->getUser();
+                    $targetFile = $user->getUID() . '/files_versions' . $version['path'] . '.v' . $version['version'];
+                    $view = new \OC\Files\View('/');
+                    $info = $view->getLocalFile($targetFile);
+                }
+                $hash = hash_file($hashType, $info);
+                $this->logger->debug('hash: ' . $hash);
+                $entity = $this->saveRecord($fileid, $targetRevision, $hashType, $hash);
             }
-            $hash = hash_file($this->hashType, $info);
-            $this->logger->info($hash);
-            $entity = $this->saveRecord($fileid, $targetRevision, $hash);
+            array_push($entities, $entity);
         }
 
         $res = [];
-        $res['hash'] = $entity->getHash();
+        $hashes = [];
+        foreach ($entities as $entity) {
+            $hashes[$entity->getType()] = $entity->getHash();
+        }
+        $res['hash'] = $hashes;
         return new DataResponse(
             $res,
             Http::STATUS_OK

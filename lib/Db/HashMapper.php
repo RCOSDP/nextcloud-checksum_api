@@ -15,13 +15,14 @@ class HashMapper extends QBMapper {
         parent::__construct($db, 'checksum_api', Hash::class);
     }
 
-    public function find(int $fileid, int $revision) {
+    public function find(int $fileid, int $revision, string $type) {
         $qb = $this->db->getQueryBuilder();
 
         $qb->select('*')
             ->from($this->tableName)
             ->where($qb->expr()->eq('fileid', $qb->createNamedParameter($fileid, IQueryBuilder::PARAM_INT)))
-            ->andWhere($qb->expr()->eq('revision', $qb->createNamedParameter($revision, IQueryBuilder::PARAM_INT)));
+            ->andWhere($qb->expr()->eq('revision', $qb->createNamedParameter($revision, IQueryBuilder::PARAM_INT)))
+            ->andWhere($qb->expr()->eq('type', $qb->createNamedParameter($type, IQueryBuilder::PARAM_STR)));
 
         try {
             $result = $this->findEntity($qb);

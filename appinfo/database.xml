@@ -32,6 +32,13 @@
                 <length>8</length>
             </field>
             <field>
+                <name>type</name>
+                <type>text</type>
+                <notnull>true</notnull>
+                <default></default>
+                <length>30</length>
+            </field>
+            <field>
                 <name>hash</name>
                 <type>text</type>
                 <notnull>true</notnull>

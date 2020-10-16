@@ -57,7 +57,27 @@ class ChecksumAPIControllerTest extends \Test\TestCase {
         parent::tearDown();
     }
 
+    public function testChecksumArgumentHashIsNull() :void {
+	$expected_stauts = Http::STATUS_BAD_REQUEST;
+        $expected_data = 'query parameter hash is missing';
+
+        $rootFolder = $this->getMockBuilder('OCP\Files\IRootFolder')->getMock();
+
+        $controller = new ChecksumAPIController('checksum-api',
+            $this->request,
+            $rootFolder,
+            $this->userSession,
+            $this->mapper,
+            $this->logger
+        );
+
+        $response = $controller->checksum(null, null, null);
+        $this->assertEquals($expected_stauts, $response->getStatus());
+        $this->assertEquals($expected_data, $response->getData());
+    }
+
     public function testChecksumArgumentPathIsNull() :void {
+        $hashType = 'sha512';
 	$expected_stauts = Http::STATUS_BAD_REQUEST;
         $expected_data = 'query parameter path is missing';
 
@@ -71,12 +91,13 @@ class ChecksumAPIControllerTest extends \Test\TestCase {
             $this->logger
         );
 
-        $response = $controller->checksum(null, null);
+        $response = $controller->checksum($hashType, null, null);
         $this->assertEquals($expected_stauts, $response->getStatus());
         $this->assertEquals($expected_data, $response->getData());
     }
 
     public function testChecksumArgumentPathIsInvalid() :void {
+        $hashType = 'sha512';
         $path = '/aaa';
 	$expected_stauts = Http::STATUS_NOT_FOUND;
         $expected_data = 'file not found at specified path: ' . $path;
@@ -95,12 +116,13 @@ class ChecksumAPIControllerTest extends \Test\TestCase {
             $this->logger
         );
 
-        $response = $controller->checksum($path, null);
+        $response = $controller->checksum($hashType, $path, null);
         $this->assertEquals($expected_stauts, $response->getStatus());
         $this->assertEquals($expected_data, $response->getData());
     }
 
     public function testChecksumArgumentRevisionIsInvalid() :void {
+        $hashType = 'sha512';
         $path = '/test';
         $revision = 'aaaa';
 	$expected_stauts = Http::STATUS_BAD_REQUEST;
@@ -120,12 +142,13 @@ class ChecksumAPIControllerTest extends \Test\TestCase {
             $this->logger
         );
 
-        $response = $controller->checksum($path, $revision);
+        $response = $controller->checksum($hashType, $path, $revision);
         $this->assertEquals($expected_stauts, $response->getStatus());
         $this->assertEquals($expected_data, $response->getData());
     }
 
     public function testChecksumVersionAppIsDisabled() :void {
+        $hashType = 'sha512';
         $path = '/test';
         $revision = '1000000000';
 	$expected_stauts = Http::STATUS_NOT_IMPLEMENTED;
@@ -149,7 +172,7 @@ class ChecksumAPIControllerTest extends \Test\TestCase {
         if ($status) {
             \OC::$server->getAppManager()->disableApp($this->versionAppId);
         }
-        $response = $controller->checksum($path, $revision);
+        $response = $controller->checksum($hashType, $path, $revision);
         $this->assertEquals($expected_stauts, $response->getStatus());
         $this->assertEquals($expected_data, $response->getData());
         if ($status) {
@@ -158,6 +181,7 @@ class ChecksumAPIControllerTest extends \Test\TestCase {
     }
 
     public function testChecksumMatchesNoVersion() :void {
+        $hashType = 'sha512';
         $path = '/test';
         $revision = '1000000000';
 	$expected_stauts = Http::STATUS_NOT_FOUND;
@@ -181,7 +205,7 @@ class ChecksumAPIControllerTest extends \Test\TestCase {
         if (!$status) {
             \OC::$server->getAppManager()->disableApp($this->versionAppId);
         }
-        $response = $controller->checksum($path, $revision);
+        $response = $controller->checksum($hashType, $path, $revision);
         $this->assertEquals($expected_stauts, $response->getStatus());
         $this->assertEquals($expected_data, $response->getData());
         if (!$status) {
@@ -190,10 +214,17 @@ class ChecksumAPIControllerTest extends \Test\TestCase {
     }
 
     public function testChecksumSucceedWithoutRevision() :void {
+        $hashType = 'sha512,sha256,md5';
         $path = '/test.txt';
         $revision = null;
 	$expected_stauts = Http::STATUS_OK;
-        $expected_data = ['hash' => '44bd27c4fe929be2c4749aadb803c1103eb5b693571d6d73dbc4056d8e18309f88c617c4f5b0f625bfd1d91929cac19bab90c0afbe4042c81132afec6d8b5fa8'];
+        $expected_data = ['hash' => 
+            [
+                'sha512' => '44bd27c4fe929be2c4749aadb803c1103eb5b693571d6d73dbc4056d8e18309f88c617c4f5b0f625bfd1d91929cac19bab90c0afbe4042c81132afec6d8b5fa8',
+                'sha256' => '6a14d590372b7708dfbd52d813068f09f48f8e4c759b3dfb9265f674c10decf2',
+                'md5' => '436ce5b7dabc34014d4dceccca91d221'
+            ]
+        ];
 
         $storage = $this->getMockBuilder('OCP\Files\Storage')->disableOriginalConstructor()->getMock();
         $storage->method('getLocalFile')->willReturn(__DIR__ . '/../data/test.txt');
@@ -219,7 +250,7 @@ class ChecksumAPIControllerTest extends \Test\TestCase {
         if (!$status) {
             \OC::$server->getAppManager()->disableApp($this->versionAppId);
         }
-        $response = $controller->checksum($path, $revision);
+        $response = $controller->checksum($hashType, $path, $revision);
         $this->assertEquals($expected_stauts, $response->getStatus());
         $this->assertEquals($expected_data, $response->getData());
         if (!$status) {

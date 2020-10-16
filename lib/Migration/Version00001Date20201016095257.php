@@ -12,7 +12,7 @@ use OCP\Migration\SimpleMigrationStep;
 /**
  * Auto-generated migration step: Please modify to your needs!
  */
-class Version00001Date20200930184622 extends SimpleMigrationStep {
+class Version00001Date20201016095257 extends SimpleMigrationStep {
 
 	/**
 	 * @param IOutput $output
@@ -51,6 +51,11 @@ class Version00001Date20200930184622 extends SimpleMigrationStep {
 				'length' => 8,
 				'default' => 0,
 				'unsigned' => true,
+			]);
+			$table->addColumn('type', 'string', [
+				'notnull' => true,
+				'length' => 30,
+				'default' => '',
 			]);
 			$table->addColumn('hash', 'string', [
 				'notnull' => true,
