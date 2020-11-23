@@ -50,18 +50,37 @@ class UserHooks {
         if ($reason !== \OCA\Files_Versions\Storage::DELETE_TRIGGER_MASTER_REMOVED) {
             $delim_pos = strrpos($path, '.v', 0);
             $base_path = substr($path, 0, $delim_pos);
-            $mtime_part = substr($path, $delim_pos + 2);
-            $mtime = intval($mtime_part);
-            $this->logger->info('base_path: ' . $base_path . ', mtime: ' . strval($mtime));
+            $mtime = substr($path, $delim_pos + 2);
+            $this->logger->info('base_path: ' . $base_path . ', mtime: ' . $mtime);
 
-            $userFolder = \OC::$server->getUserFolder();
-            $node = $userFolder->get($base_path);
-            $fileid = $node->getId();
-            $latest_mtime = $node->getMTime();
+            $owner = '';
+            $userManager = \OC::$server->getUserManager();
+            $backends = $userManager->getBackends();
+            foreach ($backends as $backend) {
+                $users = $backend->getUsers();
+                foreach ($users as $user) {
+                    $tmpPath = '/' . $user . '/files_versions';
+                    $view = new View($tmpPath);
+                    if ($view->file_exists($path)) {
+                        $owner = $user;
+                    }
+                }
+            }
+
+            $userView = new View('/' . $owner . '/files');
+            $info = $userView->getFileInfo($base_path);
+            if ($info === false) {
+                return;
+            }
+
+            $fileid = $info->getId();
+            $this->logger->info('id: ' . $fileid);
             $entities = $this->mapper->findAll($fileid);
             if (!empty($entities)) {
                 foreach ($entities as $entity) {
+                    $this->logger->info('revision: ' . $entity->getRevision());
                     if ($mtime === $entity->getRevision()) {
+                        $this->logger->info('delete');
                         $this->mapper->delete($entity);
                     }
                 }
