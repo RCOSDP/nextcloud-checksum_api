@@ -1,12 +1,12 @@
 <?xml version="1.0"?>
 <info xmlns:xsi= "http://www.w3.org/2001/XMLSchema-instance"
       xsi:noNamespaceSchemaLocation="https://apps.nextcloud.com/schema/apps/info.xsd">
-    <id>checksum-api</id>
+    <id>checksum_api</id>
     <name>Checksum API</name>
     <summary>Provide hash values of a file by REST API</summary>
     <description>Provide hash values of a file by REST API</description>
     <version>0.1</version>
-    <licence>agpl</licence>
+    <licence>apache</licence>
     <author>National Institute of Infomatics</author>
     <types>
       <filesystem/>

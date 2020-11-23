@@ -63,7 +63,7 @@ class ChecksumAPIControllerTest extends \Test\TestCase {
 
         $rootFolder = $this->getMockBuilder('OCP\Files\IRootFolder')->getMock();
 
-        $controller = new ChecksumAPIController('checksum-api',
+        $controller = new ChecksumAPIController('checksum_api',
             $this->request,
             $rootFolder,
             $this->userSession,
@@ -83,7 +83,7 @@ class ChecksumAPIControllerTest extends \Test\TestCase {
 
         $rootFolder = $this->getMockBuilder('OCP\Files\IRootFolder')->getMock();
 
-        $controller = new ChecksumAPIController('checksum-api',
+        $controller = new ChecksumAPIController('checksum_api',
             $this->request,
             $rootFolder,
             $this->userSession,
@@ -108,7 +108,7 @@ class ChecksumAPIControllerTest extends \Test\TestCase {
         $rootFolder = $this->getMockBuilder('OCP\Files\IRootFolder')->getMock();
         $rootFolder->method('getUserFolder')->with('userid')->willReturn($userFolder);
 
-        $controller = new ChecksumAPIController('checksum-api',
+        $controller = new ChecksumAPIController('checksum_api',
             $this->request,
             $rootFolder,
             $this->userSession,
@@ -134,7 +134,7 @@ class ChecksumAPIControllerTest extends \Test\TestCase {
         $rootFolder = $this->getMockBuilder('OCP\Files\IRootFolder')->getMock();
         $rootFolder->method('getUserFolder')->with('userid')->willReturn($userFolder);
 
-        $controller = new ChecksumAPIController('checksum-api',
+        $controller = new ChecksumAPIController('checksum_api',
             $this->request,
             $rootFolder,
             $this->userSession,
@@ -160,7 +160,7 @@ class ChecksumAPIControllerTest extends \Test\TestCase {
         $rootFolder = $this->getMockBuilder('OCP\Files\IRootFolder')->getMock();
         $rootFolder->method('getUserFolder')->with('userid')->willReturn($userFolder);
 
-        $controller = new ChecksumAPIController('checksum-api',
+        $controller = new ChecksumAPIController('checksum_api',
             $this->request,
             $rootFolder,
             $this->userSession,
@@ -193,7 +193,7 @@ class ChecksumAPIControllerTest extends \Test\TestCase {
         $rootFolder = $this->getMockBuilder('OCP\Files\IRootFolder')->getMock();
         $rootFolder->method('getUserFolder')->with('userid')->willReturn($userFolder);
 
-        $controller = new ChecksumAPIController('checksum-api',
+        $controller = new ChecksumAPIController('checksum_api',
             $this->request,
             $rootFolder,
             $this->userSession,
@@ -238,7 +238,7 @@ class ChecksumAPIControllerTest extends \Test\TestCase {
 
         $queryBuilder = $this->getMockBuilder(IQueryBuilder::class)->getMock();
 
-        $controller = new ChecksumAPIController('checksum-api',
+        $controller = new ChecksumAPIController('checksum_api',
             $this->request,
             $rootFolder,
             $this->userSession,

@@ -8,7 +8,7 @@ use \OCP\AppFramework\App;
 use \OCA\ChecksumAPI\Hooks\UserHooks;
 
 class Application extends App {
-    public const APP_ID = 'checksum-api';
+    public const APP_ID = 'checksum_api';
 
     public function __construct(array $urlParams = []) {
         parent::__construct(self::APP_ID, $urlParams);
