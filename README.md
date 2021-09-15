@@ -1,6 +1,23 @@
 # Nextcloud App: checksum_api
 Nextcloud application for checksum API.
 
+# Function Overview
+
+Add API to calculate hash value of specified file,
+which save a hash value to database as cache.
+Provide hash values of a file with REST API.
+query "hash" tag,sets MD5/SHA256/SHA512.
+
+# Usage
+
+## Method: GET 
+## URL:
+ https://<nextcloud_server>/ocs/v2.php/apps/nextcloud-checksum/api/checksum
+## Query Parameters:
+ path: set file path.
+ revision: set file revision.
+ hash: MD5,SHA256,SHA512
+
 ## Example of API Call
 
 ```
