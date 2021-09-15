@@ -10,13 +10,23 @@ query "hash" tag,sets MD5/SHA256/SHA512.
 
 # Usage
 
-## Method: GET 
-## URL:
+## Method 
+
+::
+
+ GET 
+
+## URL
+
+::
+
  https://<nextcloud_server>/ocs/v2.php/apps/nextcloud-checksum/api/checksum
+
 ## Query Parameters:
- path: set file path.
- revision: set file revision.
- hash: MD5,SHA256,SHA512
+
+path: set file path.
+revision: set file revision.
+hash: MD5,SHA256,SHA512
 
 ## Example of API Call
 
