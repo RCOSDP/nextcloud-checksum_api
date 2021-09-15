@@ -12,13 +12,9 @@ query "hash" tag,sets MD5/SHA256/SHA512.
 
 ## Method 
 
-::
-
  GET 
 
 ## URL
-
-::
 
  https://<nextcloud_server>/ocs/v2.php/apps/nextcloud-checksum/api/checksum
 
