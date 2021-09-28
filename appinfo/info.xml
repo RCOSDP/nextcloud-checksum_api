@@ -5,22 +5,16 @@
     <name>Checksum API</name>
     <summary>Provide hash values of a file by REST API</summary>
     <description>Provide hash values of a file by REST API</description>
-    <version>0.1</version>
+    <version>0.1.2</version>
     <licence>apache</licence>
     <author>National Institute of Infomatics</author>
     <types>
       <filesystem/>
     </types>
     <namespace>ChecksumAPI</namespace>
-    <documentation>
-        <user></user>
-        <admin></admin>
-    </documentation>
     <category>files</category>
     <category>tools</category>
-    <website></website>
-    <bugs></bugs>
-    <screenshot></screenshot>
+    <bugs>https://github.com/RCOSDP/nextcloud-checksum_api/issues</bugs>
     <dependencies>
         <nextcloud min-version="15" max-version="19" />
     </dependencies>
