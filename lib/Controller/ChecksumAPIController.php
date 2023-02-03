@@ -4,14 +4,12 @@ declare(strict_types=1);
 
 namespace OCA\ChecksumAPI\Controller;
 
-use OC\Files\Filesystem;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\DataResponse;
 use OCP\AppFramework\OCSController;
 use OCP\Files\IRootFolder;
 use OCP\Files\NotFoundException;
-use OCP\IDBConnection;
-use OCP\ILogger;
+use Psr\Log\LoggerInterface;
 use OCP\IRequest;
 use OCP\IUserSession;
 
@@ -32,7 +30,7 @@ class ChecksumAPIController extends OCSController {
                                 IRootFolder $rootFolder,
                                 IUserSession $userSession,
                                 HashMapper $mapper,
-                                ILogger $logger) {
+                                LoggerInterface $logger) {
         parent::__construct($appName, $request);
         $this->rootFolder = $rootFolder;
         $this->userSession = $userSession;
@@ -140,7 +138,7 @@ class ChecksumAPIController extends OCSController {
                 $this->logger->info('latest version matches');
             } else {
                 // check if version function is enabled
-                if (!\OCP\App::isEnabled($this->versionAppId)) {
+                if (!\OC_App::isEnabled($this->versionAppId)) {
                     $this->logger->error('version function is not enabled');
                     return new DataResponse(
                         'version function is not enabled',

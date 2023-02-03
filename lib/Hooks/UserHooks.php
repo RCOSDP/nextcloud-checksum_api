@@ -7,9 +7,9 @@ namespace OCA\ChecksumAPI\Hooks;
 use OCP\Files\IRootFolder;
 use OCP\IDBConnection;
 use OCP\ILogger;
-use OC\Files\Filesystem;
 use OC\Files\Node\Node;
 
+use OC\Files\View;
 use OCA\ChecksumAPI\Db\HashMapper;
 
 class UserHooks {

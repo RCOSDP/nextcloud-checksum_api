@@ -168,7 +168,7 @@ class ChecksumAPIControllerTest extends \Test\TestCase {
             $this->logger
         );
 
-        $status = \OCP\App::isEnabled($this->versionAppId);
+        $status = \OC_App::isEnabled($this->versionAppId);
         if ($status) {
             \OC::$server->getAppManager()->disableApp($this->versionAppId);
         }
