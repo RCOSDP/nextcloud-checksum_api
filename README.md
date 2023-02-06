@@ -10,6 +10,11 @@ query "hash" tag,sets MD5/SHA256/SHA512.
 
 # Usage
 
+- cd apps/checksum_api
+- Composer update
+- Composer dump-autoload
+
+
 ## Method 
 
  GET 

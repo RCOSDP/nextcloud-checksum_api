@@ -1,38 +1,47 @@
 <?php
 
+
+
 declare(strict_types=1);
 
 namespace OCA\ChecksumAPI\Controller;
 
-use OC\Files\Filesystem;
+require __DIR__ . '../../../vendor/autoload.php';
+
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\DataResponse;
 use OCP\AppFramework\OCSController;
 use OCP\Files\IRootFolder;
 use OCP\Files\NotFoundException;
-use OCP\IDBConnection;
 use OCP\ILogger;
 use OCP\IRequest;
 use OCP\IUserSession;
-
 use OCA\ChecksumAPI\Db\Hash;
 use OCA\ChecksumAPI\Db\HashMapper;
 
-class ChecksumAPIController extends OCSController {
+use Amp\Parallel\Worker\DefaultPool;
+use Amp;
+use OCA\ChecksumAPI\Jobs\HashableTask;
+use Psr\Log\LoggerInterface;
+
+class ChecksumAPIController extends OCSController{
 
     private $rootFolder;
     private $userSession;
     private $mapper;
     private $logger;
+    private $minFileSizeToExcuteParallel = 20971520;
     private $hashTypes = ['md5', 'sha256', 'sha512'];
     private $versionAppId = 'files_versions';
 
-    public function __construct($appName,
-                                IRequest $request,
-                                IRootFolder $rootFolder,
-                                IUserSession $userSession,
-                                HashMapper $mapper,
-                                ILogger $logger) {
+    public function __construct(
+        $appName,
+        IRequest $request,
+        IRootFolder $rootFolder,
+        IUserSession $userSession,
+        HashMapper $mapper,
+        LoggerInterface $logger
+    ) {
         parent::__construct($appName, $request);
         $this->rootFolder = $rootFolder;
         $this->userSession = $userSession;
@@ -41,7 +50,7 @@ class ChecksumAPIController extends OCSController {
     }
 
     private function isValidHash(string $hash) {
-        foreach($this->hashTypes as $hashType) {
+        foreach ($this->hashTypes as $hashType) {
             if ($hashType === $hash) {
                 return true;
             }
@@ -62,7 +71,7 @@ class ChecksumAPIController extends OCSController {
         return null;
     }
 
-    private function saveRecord(int $fileid, int $revision, string $hashType, string $hash) {
+    function saveRecord(int $fileid, int $revision, string $hashType, string $hash) {
         $entity = new Hash();
         $entity->setFileid($fileid);
         $entity->setRevision($revision);
@@ -94,7 +103,7 @@ class ChecksumAPIController extends OCSController {
         }
 
         $hashTypes = explode(',', $hash);
-        foreach($hashTypes as $hashType) {
+        foreach ($hashTypes as $hashType) {
             if (!$this->isValidHash($hashType)) {
                 $this->logger->error('query parameter hash is invalid.');
                 return new DataResponse(
@@ -139,8 +148,7 @@ class ChecksumAPIController extends OCSController {
             if ($revision === strval($latestRevision)) {
                 $this->logger->info('latest version matches');
             } else {
-                // check if version function is enabled
-                if (!\OCP\App::isEnabled($this->versionAppId)) {
+                if (!\OC::$server->getAppManager()->isEnabledForUser($this->versionAppId)) {
                     $this->logger->error('version function is not enabled');
                     return new DataResponse(
                         'version function is not enabled',
@@ -148,7 +156,6 @@ class ChecksumAPIController extends OCSController {
                     );
                 }
                 $this->logger->info($this->versionAppId . ' is enabled');
-
                 $version = $this->getMatchedVersion($path, $revision);
                 if (is_null($version)) {
                     $this->logger->error('specified revision is not found');
@@ -163,6 +170,8 @@ class ChecksumAPIController extends OCSController {
         }
 
         $entities = [];
+        $tasks = [];
+        $hashRequest = explode(",", $this->request->getParam('hash') ?? '');
         foreach ($hashTypes as $hashType) {
             $entity = $this->mapper->find($fileid, $targetRevision, $hashType);
             if (is_null($entity)) {
@@ -175,13 +184,48 @@ class ChecksumAPIController extends OCSController {
                     $view = new \OC\Files\View('/');
                     $info = $view->getLocalFile($targetFile);
                 }
-                $hash = hash_file($hashType, $info);
-                $this->logger->debug('hash: ' . $hash);
-                $entity = $this->saveRecord($fileid, $targetRevision, $hashType, $hash);
+                // check file size 20MB
+                if (fileSize($info) <= $this->minFileSizeToExcuteParallel || count($hashRequest) === 1) {
+                    $hash = hash_file($hashType, $info);
+                    $this->logger->debug('hash: ' . $hash);
+                    $entity = $this->saveRecord($fileid, $targetRevision, $hashType, $hash);
+                    array_push($entities, $entity);
+                } else {
+                    array_push(
+                        $tasks,
+                        new HashableTask(
+                            'hashCalculator',
+                            [
+                                "hashType" => $hashType,
+                                "fileid" => $fileid,
+                                "revision" => $targetRevision,
+                                "info" => $info
+                            ],
+                        ),
+                    );
+                }
+            } else {
+                array_push($entities, $entity);
             }
-            array_push($entities, $entity);
         }
-
+        if (!empty($tasks)) {
+            Amp\Loop::run(function () use (&$entities, $tasks) {
+                $pool = new DefaultPool;
+                $coroutines = [];
+                foreach ($tasks as $task) {
+                    $coroutines[] = Amp\call(function () use ($pool, $task) {
+                        $entity = yield $pool->enqueue($task);
+                        $this->mapper->insert($entity);
+                        return $entity;
+                    });
+                }
+                $completedTask = yield Amp\Promise\all($coroutines);
+                foreach ($completedTask as $task) {
+                    array_push($entities, $task);
+                }
+                return yield $pool->shutdown();
+            });
+        }
         $res = [];
         $hashes = [];
         foreach ($entities as $entity) {

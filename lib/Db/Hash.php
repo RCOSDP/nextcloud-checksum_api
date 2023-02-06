@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace OCA\ChecksumAPI\Db;
 
+require __DIR__ . '../../../../../lib/composer/autoload.php';
+
 use OCP\AppFramework\Db\Entity;
 
 class Hash extends Entity {
