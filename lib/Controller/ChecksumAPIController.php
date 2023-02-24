@@ -13,7 +13,6 @@ use OCP\AppFramework\Http\DataResponse;
 use OCP\AppFramework\OCSController;
 use OCP\Files\IRootFolder;
 use OCP\Files\NotFoundException;
-use OCP\ILogger;
 use OCP\IRequest;
 use OCP\IUserSession;
 use OCA\ChecksumAPI\Db\Hash;
@@ -24,11 +23,12 @@ use Amp;
 use OCA\ChecksumAPI\Jobs\HashableTask;
 use Psr\Log\LoggerInterface;
 
-class ChecksumAPIController extends OCSController{
+class ChecksumAPIController extends OCSController {
 
     private $rootFolder;
     private $userSession;
     private $mapper;
+    private $appManager;
     private $logger;
     private $minFileSizeToExcuteParallel = 20971520;
     private $hashTypes = ['md5', 'sha256', 'sha512'];
@@ -171,7 +171,6 @@ class ChecksumAPIController extends OCSController{
 
         $entities = [];
         $tasks = [];
-        $hashRequest = explode(",", $this->request->getParam('hash') ?? '');
         foreach ($hashTypes as $hashType) {
             $entity = $this->mapper->find($fileid, $targetRevision, $hashType);
             if (is_null($entity)) {
@@ -185,7 +184,7 @@ class ChecksumAPIController extends OCSController{
                     $info = $view->getLocalFile($targetFile);
                 }
                 // check file size 20MB
-                if (fileSize($info) <= $this->minFileSizeToExcuteParallel || count($hashRequest) === 1) {
+                if (fileSize($info) <= $this->minFileSizeToExcuteParallel || count($hashTypes) === 1) {
                     $hash = hash_file($hashType, $info);
                     $this->logger->debug('hash: ' . $hash);
                     $entity = $this->saveRecord($fileid, $targetRevision, $hashType, $hash);
