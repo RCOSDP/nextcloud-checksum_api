@@ -8,7 +8,7 @@ use OC\Files\Node\Root;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\DataResponse;
 use OCP\Files\NotFoundException;
-use OCP\ILogger;
+use Psr\Log\LoggerInterface;
 use OCP\IRequest;
 use OCP\IUser;
 use OCP\IUserManager;
@@ -45,7 +45,7 @@ class ChecksumAPIControllerTest extends \Test\TestCase {
 
         $this->mapper = $this->getMockBuilder(HashMapper::class)->disableOriginalConstructor()->getMock();
 
-        $this->logger = $this->getMockBuilder(ILogger::class)->getMock();
+        $this->logger = $this->getMockBuilder(LoggerInterface::class)->getMock();
 
         $this->file = $this->getMockBuilder('OCP\Files\File')->disableOriginalConstructor()->getMock();
         $this->file->method('getId')->willReturn(1);
@@ -168,7 +168,7 @@ class ChecksumAPIControllerTest extends \Test\TestCase {
             $this->logger
         );
 
-        $status = \OCP\App::isEnabled($this->versionAppId);
+        $status = \OC_App::isEnabled($this->versionAppId);
         if ($status) {
             \OC::$server->getAppManager()->disableApp($this->versionAppId);
         }
@@ -201,7 +201,7 @@ class ChecksumAPIControllerTest extends \Test\TestCase {
             $this->logger
         );
 
-        $status = \OCP\App::isEnabled($this->versionAppId);
+        $status = \OC::$server->getAppManager()->isEnabledForUser($this->versionAppId);
         if (!$status) {
             \OC::$server->getAppManager()->disableApp($this->versionAppId);
         }
@@ -246,7 +246,7 @@ class ChecksumAPIControllerTest extends \Test\TestCase {
             $this->logger
         );
 
-        $status = \OCP\App::isEnabled($this->versionAppId);
+        $status = \OC::$server->getAppManager()->isEnabledForUser($this->versionAppId);
         if (!$status) {
             \OC::$server->getAppManager()->disableApp($this->versionAppId);
         }
