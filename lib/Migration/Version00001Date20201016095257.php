@@ -59,7 +59,7 @@ class Version00001Date20201016095257 extends SimpleMigrationStep {
 			]);
 			$table->addColumn('hash', 'string', [
 				'notnull' => true,
-				'length' => 64,
+				'length' => 128,
 				'default' => '',
 			]);
 			$table->setPrimaryKey(['id']);
